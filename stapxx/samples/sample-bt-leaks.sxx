@@ -1,0 +1,103 @@
+#!/usr/bin/env stap++
+
+# Copyright (C) Yichun Zhang (agentzh)
+
+global ptr2bt
+global ptr2size
+global bt_stats
+global quit
+global free_misses
+
+probe begin
+{
+    warn(sprintf("Start tracing %d ($^exec_path)...", target()))
+    warn("Wait for $^arg_time :default(10) sec to complete.\n")
+}
+
+probe process("$^libc_path").function("malloc").return,
+      process("$^libc_path").function("calloc").return,
+      process("$^libc_path").function("realloc").return
+{
+    if (pid() == target()) {
+        //printf("Hit %s\n", probefunc())
+        if (quit) {
+            if (free_misses) {
+                warn(sprintf("free misses: %d", free_misses))
+            }
+
+            foreach (bt in bt_stats) {
+                print_ustack(bt)
+                printf("\t%d\n", @sum(bt_stats[bt]))
+            }
+
+            exit()
+
+        } else {
+            if (@defined($oldmem)) {
+                //printf("free %p in realloc\n", $oldmem)
+                ptr = $oldmem
+
+                bt = ptr2bt[ptr]
+                delete ptr2bt[ptr]
+
+                bytes = ptr2size[ptr]
+                delete ptr2size[ptr]
+
+                bt_stats[bt] <<< -bytes
+                if (@sum(bt_stats[bt]) == 0) {
+                    delete bt_stats[bt]
+                }
+            }
+
+            ptr = returnval()
+            if (ptr) {
+                // here we use a hack specific to glibc's implementation
+                // to get the size of the memory block because we
+                // may not get the value of the $bytes parameter reliably.
+                $*sizeof_size_t := &@cast(0, "size_t")[1]
+                p = ptr - $*sizeof_size_t
+                size = @cast(p, "size_t")[0] & ~($*sizeof_size_t - 1)
+
+                //printf("alloc: %p (bytes %d)\n", ptr, size)
+                bt = ubacktrace()
+                ptr2bt[ptr] = bt
+                ptr2size[ptr] = size
+                bt_stats[bt] <<< size
+
+            } else {
+                warn("NULL returned")
+            }
+        }
+    }
+}
+
+probe process("$^libc_path").function("free")
+{
+    ptr = pointer_arg(1)
+    if (pid() == target() && ptr) {
+        //printf("free: %p\n", ptr)
+
+        bt = ptr2bt[ptr]
+        delete ptr2bt[ptr]
+
+        bytes = ptr2size[ptr]
+        delete ptr2size[ptr]
+
+        if (bt == "" && bytes == 0) {
+            free_misses++
+
+        } else {
+            bt_stats[bt] <<< -bytes
+            if (@sum(bt_stats[bt]) == 0) {
+                delete bt_stats[bt]
+            }
+        }
+    }
+}
+
+probe timer.s($^arg_time)
+{
+    quit = 1
+    delete ptr2bt
+    delete ptr2size
+}

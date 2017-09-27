@@ -1,0 +1,146 @@
+// module nginx.request
+
+@define NGX_HTTP_GET         %( 0x0002 %)
+@define NGX_HTTP_HEAD        %( 0x0004 %)
+@define NGX_HTTP_POST        %( 0x0008 %)
+@define NGX_HTTP_PUT         %( 0x0010 %)
+@define NGX_HTTP_DELETE      %( 0x0020 %)
+@define NGX_HTTP_MKCOL       %( 0x0040 %)
+@define NGX_HTTP_COPY        %( 0x0080 %)
+@define NGX_HTTP_MOVE        %( 0x0100 %)
+@define NGX_HTTP_OPTIONS     %( 0x0200 %)
+
+@define AF_UNIX              %( 1 %)
+@define AF_INET6             %( 10 %)
+
+function ngx_req_method(r)
+{
+    $*r := @cast(r, "ngx_http_request_t", "$^exec_path")
+    m = $*r->method
+    if (m == @NGX_HTTP_GET) {
+        return "GET"
+    }
+
+    if (m == @NGX_HTTP_HEAD) {
+        return "HEAD"
+    }
+
+    if (m == @NGX_HTTP_POST) {
+        return "POST"
+    }
+
+    if (m == @NGX_HTTP_PUT) {
+        return "PUT"
+    }
+
+    if (m == @NGX_HTTP_DELETE) {
+        return "DELETE"
+    }
+
+    if (m == @NGX_HTTP_MKCOL) {
+        return "MKCOL"
+    }
+
+    if (m == @NGX_HTTP_COPY) {
+        return "COPY"
+    }
+
+    if (m == @NGX_HTTP_MOVE) {
+        return "MOVE"
+    }
+
+    if (m == @NGX_HTTP_OPTIONS) {
+        return "OPTIONS"
+    }
+
+    len = $*r->method_name->len
+    if (len == 0) {
+        return ""
+    }
+    return user_string_n_warn($*r->method_name->data, len)
+}
+
+
+function ngx_req_uri(r)
+{
+    $*r := @cast(r, "ngx_http_request_t", "$^exec_path")
+    len = $*r->uri->len
+    if (len == 0) {
+        return ""
+    }
+    return user_string_n_warn($*r->uri->data, len)
+}
+
+
+function ngx_req_args(r)
+{
+    $*r := @cast(r, "ngx_http_request_t", "$^exec_path")
+    len = $*r->args->len
+    if (len == 0) {
+        return ""
+    }
+    return user_string_n_warn($*r->args->data, len)
+}
+
+
+function ngx_req_host(r)
+{
+    $*r := @cast(r, "ngx_http_request_t", "$^exec_path")
+    host = $*r->headers_in->host
+    if (host) {
+        $*host := @cast(host, "ngx_table_elt_t", "$^exec_path")
+        len = $*host->value->len
+        if (len == 0) {
+            return ""
+        }
+        return user_string_n_warn($*host->value->data, len)
+    }
+    return ""
+}
+
+
+function ngx_req_ua(r)
+{
+    $*r := @cast(r, "ngx_http_request_t", "$^exec_path")
+    ua = $*r->headers_in->user_agent
+    if (ua) {
+        $*ua := @cast(ua, "ngx_table_elt_t", "$^exec_path")
+        len = $*ua->value->len
+        if (len == 0) {
+            return ""
+        }
+        return user_string_n_warn($*ua->value->data, len)
+    }
+    return ""
+}
+
+
+function ngx_req_remote_addr(r)
+{
+    $*r := @cast(r, "ngx_http_request_t", "$^exec_path")
+    len = $*r->connection->addr_text->len
+    if (len == 0) {
+        return ""
+    }
+    return user_string_n_warn($*r->connection->addr_text->data, len)
+}
+
+
+function ngx_req_remote_port(r)
+{
+    $*r := @cast(r, "ngx_http_request_t", "$^exec_path")
+    sockaddr = $*r->connection->sockaddr
+    sa_family = $*r->connection->sockaddr->sa_family
+    if (sa_family == @AF_INET6) {
+        $*sockaddr_in6 := @cast(sockaddr, "sockaddr_in6")
+        return ntohs($*sockaddr_in6->sin6_port)
+        // return 0
+    }
+
+    if (sa_family == @AF_UNIX) {
+        return 0
+    }
+
+    $*sockaddr_in := @cast(sockaddr, "sockaddr_in", "$^exec_path")
+    return ntohs($*sockaddr_in->sin_port)
+}

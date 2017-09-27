@@ -1,0 +1,22 @@
+#!/usr/bin/env stap++
+
+# Print out the current number of requests per second in the Nginx worker
+# process specified at real time.
+
+global count
+
+probe @pfunc(ngx_http_log_request)
+{
+    if ($^pid_ok && $r == $r->main) {
+        count++
+    }
+}
+
+probe timer.s(1) {
+    printf("[%d] %d req/sec\n", gettimeofday_s(), count)
+    count = 0
+}
+
+probe begin {
+    warn(sprintf("Tracing process %d ($^exec_path).\nHit Ctrl-C to end.\n", target()))
+}

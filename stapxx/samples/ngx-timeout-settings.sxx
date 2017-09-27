@@ -1,0 +1,114 @@
+#!/usr/bin/env stap++
+
+global waiting_timer
+global timer_type  // 0: read, 1: send, 2: connect
+global read_timeouts, send_timeouts, connect_timeouts
+
+@define READ_EV %( 0 %)
+@define SEND_EV %( 1 %)
+@define CONNECT_EV %( 2 %)
+
+@define EAGAIN %(11 %)
+@define EINPROGRESS %(115 %)
+
+@define MSG_PEEK %( 2 %)
+
+@use kernel.socket
+
+function match_port(sk)
+{
+    %( $^arg_dport :default(0) != 0  %?
+    return __tcp_sock_dport(sk) == $^arg_dport
+    %:
+    return __tcp_sock_sport(sk) == $^arg_sport :default(0)
+    %)
+}
+
+probe tcp.recvmsg.return
+{
+    if (pid() == target()) {
+        //printf("recvmsg return: %d\n", $return)
+        //print_ubacktrace()
+        if ($return == -@EAGAIN && !($flags & @MSG_PEEK) && match_port($sk)) {
+            //println("recvmsg EAGAIN")
+            waiting_timer = 1
+            timer_type = @READ_EV
+
+        } else {
+            waiting_timer = 0
+        }
+    }
+}
+
+probe tcp.sendmsg.return
+{
+    if (pid() == target()) {
+        //printf("sendmsg return: %d\n", $return)
+        if ($return == -@EAGAIN && match_port($sk)) {
+            //println("sendmsg EAGAIN")
+            waiting_timer = 1
+            timer_type = @SEND_EV
+
+        } else {
+            waiting_timer = 0
+        }
+    }
+}
+
+probe kernel.function("inet_stream_connect").return
+{
+    if (pid() == target()) {
+        //printf("connect return: %d\n", $return)
+        if ($return == -@EINPROGRESS && match_port($sock->sk)) {
+            //println("connect EINPROGRESS")
+            waiting_timer = 1
+            timer_type = @CONNECT_EV
+
+        } else {
+            waiting_timer = 0
+        }
+    }
+}
+
+probe @pfunc(ngx_event_add_timer)
+{
+    if (pid() == target() && waiting_timer) {
+        waiting_timer = 0
+        if (@defined($timer)) {
+            if (timer_type == @SEND_EV && $ev->write) {
+                send_timeouts[$timer] <<< 1
+
+            } else if (timer_type == @CONNECT_EV && $ev->write) {
+                connect_timeouts[$timer] <<< 1
+
+            } else if (timer_type == @READ_EV && !$ev->write) {
+                read_timeouts[$timer] <<< 1
+
+            }
+        }
+    }
+}
+
+probe end {
+    printf("\n")
+
+    foreach (timer in connect_timeouts- limit $^arg_limit :default(10)) {
+        printf("Connecting timeout %dms: %d samples\n", timer, @count(connect_timeouts[timer]))
+    }
+
+    foreach (timer in send_timeouts- limit $^arg_limit) {
+        printf("Sending timeout %dms: %d samples\n", timer, @count(send_timeouts[timer]))
+    }
+
+    foreach (timer in read_timeouts- limit $^arg_limit) {
+        printf("Reading timeout %dms: %d samples\n", timer, @count(read_timeouts[timer]))
+    }
+}
+
+probe begin
+{
+    %( $^arg_dport == 0 && $^arg_sport == 0 %?
+        error("Neither --arg dport=PORT nor --arg sport=PORT is specified.")
+    %)
+    warn(sprintf("Tracing process %d ($^exec_path)\n", target()))
+}

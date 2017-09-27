@@ -1,0 +1,64 @@
+// module kernel.socket
+
+function sockfd_lookup(fd)
+{
+    current = task_current()
+    $*current := @cast(current, "task_struct", "kernel<linux/sched.h>")
+
+    files = $*current->files
+    $*files := @cast(files, "files_struct", "kernel<linux/fdtable.h>")
+
+    if (files == 0 || $*files->fdt == 0 || fd >= $*files->fdt->max_fds) {
+        return 0
+    }
+
+    file = $*files->fdt->fd[fd]
+    $*file := @cast(file, "struct file", "kernel")
+
+    if ($*file->f_op != &@var("socket_file_ops@net/socket.c", "kernel")) {
+        return 0
+    }
+
+    return $*file->private_data
+}
+
+
+function socket_unix_stream_file_name(socket)
+{
+    $*socket := @cast(socket, "struct socket", "kernel")
+    //printf("ops = %p\n", $*socket->ops)
+    //printf("&unix_stream_ops = %p\n", &@var("unix_stream_ops@af_unix.c", "kernel"))
+    if ($*socket->ops == &@var("unix_stream_ops@af_unix.c", "kernel")) {
+        u = $*socket->sk
+        $*u := @cast(u, "struct unix_sock", "kernel")
+        //printf("MATCH! %s\n", kernel_string($*u->path->dentry->d_iname))
+        if ($*u->path->dentry) {
+            return kernel_string($*u->path->dentry->d_iname)
+        }
+    }
+
+    return ""
+}
+
+
+function socket_tcp_state(socket)
+{
+    state = $*socket->sk->__sk_common->skc_state
+    return tcp_sockstate_str(state)
+}
+
+
+function socket_dport(socket)
+{
+    $*socket := @cast(socket, "struct socket", "kernel")
+    sk = $*socket->sk
+    return __tcp_sock_dport(sk)
+}
+
+
+function socket_sport(socket)
+{
+    $*socket := @cast(socket, "struct socket", "kernel")
+    sk = $*socket->sk
+    return __tcp_sock_sport(sk)
+}
