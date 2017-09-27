@@ -11,12 +11,13 @@
 
 `
 perf top -e cpu-clock
+perf top -p pid
 `
 
 
 ###### 查看内存问题
 `
-ngx_on_memory.sh
+./ngx_on_memory.sh pid
 `
 
 `
@@ -26,4 +27,9 @@ perf top -e faults
 ###### 查看系统IO
 `
 perf top -e block:block_rq_issue
+`
+
+###### 打印堆栈信息
+`
+pstack pid
 `
