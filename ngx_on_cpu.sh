@@ -1,6 +1,6 @@
 #bin/bash
 
-patch=ngx_on_cpu
+path=ngx_on_cpu
 
 mkdir $path
 

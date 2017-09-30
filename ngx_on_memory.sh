@@ -1,6 +1,6 @@
 #bin/bash
 
-patch=ngx_on_memory
+path=ngx_on_memory
 
 mkdir $path
 
