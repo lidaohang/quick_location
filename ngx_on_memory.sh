@@ -3,6 +3,7 @@
 path=ngx_on_memory
 
 mkdir $path
+export PATH=$PWD/stapxx/:$PATH
 
 stapxx/samples/sample-bt-leaks.sxx -x $1 --arg time=10 -D STP_NO_OVERLOAD -D MAXMAPENTRIES=20000 > $path/$1.bt
 
