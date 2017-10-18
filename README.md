@@ -243,7 +243,11 @@ python -m SimpleHTTPServer 8088
 
 ####  off-CPU 内核态
 ```
+<<<<<<< HEAD
 #off-CPU kernel
+=======
+//off-CPU kernel
+>>>>>>> def4ec0cbbb226e8483e7ba21167b786f7ef63c7
 sh ngx_off_cpu_k.sh pid
 
 //进入结果目录
@@ -274,7 +278,10 @@ python -m SimpleHTTPServer 8088
 127.0.0.1:8088/pid.svg
 
 ```
+<<<<<<< HEAD
 
+=======
+>>>>>>> def4ec0cbbb226e8483e7ba21167b786f7ef63c7
 
 
 
