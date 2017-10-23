@@ -389,7 +389,7 @@ int main(void)
 ```
 
 ##### DEMO火焰图
-![image](https://git.xiaojukeji.com/lihanglucien/quick_location/raw/master/demo/on-cpu.png)
+![image](https://github.com/lidaohang/quick_location/raw/master/demo/on-cpu.png)
 
 
 
@@ -547,7 +547,7 @@ int main(void)
 ```
 
 ##### DEMO红蓝差分火焰图
-![image](https://git.xiaojukeji.com/lihanglucien/quick_location/raw/master/demo/diff.png)
+![image](https://github.com/lidaohang/quick_location/raw/master/demo/diff.png)
 
 
 
@@ -561,7 +561,7 @@ int main(void)
 #### 分析
 ##### 分析nginx请求流量
 
-![image](https://git.xiaojukeji.com/lihanglucien/quick_location/raw/master/demo/demo_ngx_counter.png)
+![image](https://github.com/lidaohang/quick_location/raw/master/demo/demo_ngx_counter.png)
 
 ##### 结论
 通过上图发现流量并没有突增，反而下降了，跟请求流量突增没关系。
@@ -569,7 +569,7 @@ int main(void)
 
 ##### 分析nginx响应时间
 
-![image](https://git.xiaojukeji.com/lihanglucien/quick_location/raw/master/demo/demo_ngx_latency.png)
+![image](https://github.com/lidaohang/quick_location/raw/master/demo/demo_ngx_latency.png)
 
 ##### 结论:
 通过上图发现nginx的响应时间有增加可能跟nginx自身有关系或者跟后端upstream响应时间有关系。
@@ -577,7 +577,7 @@ int main(void)
 
 ##### 分析nginx upstream响应时间
 
-![image](https://git.xiaojukeji.com/lihanglucien/quick_location/raw/master/demo/demo_ngx_upstream_latency.png)
+![image](https://github.com/lidaohang/quick_location/raw/master/demo/demo_ngx_upstream_latency.png)
 
 ##### 结论
 通过上图发现nginx upstream 响应时间有增加，目前猜测可能后端upstream响应时间拖住nginx，导致nginx出现请求流量异常。
@@ -589,7 +589,7 @@ int main(void)
 ```
 top
 ```
-![image](https://git.xiaojukeji.com/lihanglucien/quick_location/raw/master/demo/demo_ngx_top.png)
+![image](https://github.com/lidaohang/quick_location/raw/master/demo/demo_ngx_top.png)
 
 ##### 结论
 发现nginx worker cpu比较高
@@ -599,7 +599,7 @@ top
 ```
 perf top -p pid
 ```
-![image](https://git.xiaojukeji.com/lihanglucien/quick_location/raw/master/demo/demo-perf.png)
+![image](https://github.com/lidaohang/quick_location/raw/master/demo/demo-perf.png)
 
 ##### 结论 
 发现主要开销在free,malloc,json解析上面
@@ -622,10 +622,10 @@ python -m SimpleHTTPServer 8088
 127.0.0.1:8088/pid.svg
 ```
 
-![image](https://git.xiaojukeji.com/lihanglucien/quick_location/raw/master/demo/6011.png)
+![image](https://github.com/lidaohang/quick_location/raw/master/demo/6011.png)
 
 
-[火焰图信息](https://git.xiaojukeji.com/lihanglucien/quick_location/raw/master/demo/6011.svg)
+[火焰图信息](https://github.com/lidaohang/quick_location/raw/master/demo/6011.svg)
 
 ##### 结论
 发现代码里面有频繁的解析json操作，并且发现这个json库性能不高，占用cpu挺高。
