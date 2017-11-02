@@ -59,6 +59,7 @@ uptime | 平均负载
 vmstat | 包括系统范围的cpu平均负载
 mpstat | 查看所有cpu核信息
 top | 监控每个进程cpu用量
+sar -u | 查看cpu信息
 pidstat | 每个进程cpu用量分解
 perf | cpu剖析和跟踪，性能计数分析
 
@@ -114,6 +115,7 @@ vmstat | 虚拟内存统计信息
 top | 监视每个进程的内存使用情况
 pidstat | 显示活动进程的内存使用统计
 pmap | 查看进程的内存映像信息
+sar -r | 查看内存
 dtrace | 动态跟踪
 valgrind | 分析程序性能及程序中的内存泄露错误
 
@@ -207,7 +209,8 @@ ss | 可以用来获取socket统计信息，它可以显示和netstat类似的�
 host,nslookup | 可以用来查出某个主机名的 IP 
 tcpdump | 是以包为单位进行输出的，阅读起来不是很方便
 tcpflow | 是面向tcp流的, 每个tcp传输会保存成一个文件,很方便的查看
-sar | 查询网络以及tcp，udp状态信息
+sar -n DEV | 网卡流量情况
+sar -n SOCK  | 查询网络以及tcp，udp状态信息
 
 
 ### 使用方式
